@@ -76,7 +76,7 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case B(b) => b
-      case N(n) => if (n == 0) return true else return !n.isNaN() 
+      case N(n) => if (n == 0) return false else return !n.isNaN() 
       case S(s) => if (s == "") return false else return true
       case Undefined => return false
     }
@@ -86,8 +86,8 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case S(s) => s
-      case N(n) => n.toString
-      case B(b) => b.toString
+      case N(n) => if(n%1 ==0) return n.toInt.toString else return n.toString
+      case B(b) => if(b) return "true" else return "false"
       case Undefined => "undefined"
       //case _ => throw new UnsupportedOperationException
     }
@@ -105,9 +105,16 @@ object Lab2 extends jsy.util.JsyApplication {
       case Undefined => return e ;
       /* Inductive Cases */
       case Print(e1) => println(pretty(eToVal(e1))); Undefined
-      case Var(x) => return env(x) ;
-      case ConstDecl(x, en, ed) => return eval(env + (x -> en), ed)
-      case If(cond, t, f) => if(toBoolean(cond)) return t else return f
+      case Var(x) =>{ 
+        //println(x); 
+        return Undefined
+        //return env(x)
+      }
+      case ConstDecl(x, en, ed) =>
+        {val term = eval(en)
+          return eval(env + (x -> term), ed)
+        }
+      case If(cond, t, f) => if(toBoolean(cond)) return eval(t) else return eval(f)
       case Unary(op, en) => op match
       {
         case Neg => return N(-1 * toNumber(eval(en))) //unary make negative
@@ -116,6 +123,7 @@ object Lab2 extends jsy.util.JsyApplication {
       }
       case Binary(op, en, ed) => op match
       {
+
         case Plus => en match{//plus works on number and string types. If either type is a string, it concatenates one expresiion with the other
           case N(a) => ed match{
             case N(b) => return N(a+b)
@@ -124,6 +132,8 @@ object Lab2 extends jsy.util.JsyApplication {
           case _=> return S(toStr(eval(en)).concat(toStr(eval(ed))))
           
         }
+
+        //case Plus => return N(toNumber(eval(en)) + toNumber(eval(ed)))
         case Minus => return N(toNumber(eval(en)) - toNumber(eval(ed)))
         case Times => return N(toNumber(eval(en)) * toNumber(eval(ed)))
         case Div => { //binary divide
@@ -148,7 +158,14 @@ object Lab2 extends jsy.util.JsyApplication {
         case _ => throw new UnsupportedOperationException
       }
   }
+  println("fuck")
+    val e1 = N(3)
+    val e2 = Binary(Plus, Var("x"), N(1))
+    val e3 = ConstDecl("x", e1, e2)
+    val e4 = Binary(Plus, e3, N(5))
+    eval(e4)
     
+  
   // Interface to run your interpreter starting from an empty environment.
   def eval(e: Expr): Expr = eval(emp, e)
 
