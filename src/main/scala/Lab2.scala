@@ -76,7 +76,7 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case B(b) => b
-      case N(n) => if (n == 0) return false else return !n.isNaN() 
+      case N(n) => if (n.isNaN()) return false else return (n != 0) 
       case S(s) => if (s == "") return false else return true
       case Undefined => return false
     }
@@ -86,8 +86,8 @@ object Lab2 extends jsy.util.JsyApplication {
     require(isValue(v))
     (v: @unchecked) match {
       case S(s) => s
-      case N(n) => if(n%1 ==0) return n.toInt.toString else return n.toString
-      case B(b) => if(b) return "true" else return "false"
+      case N(n) => if (n.isWhole) "%.0f" format n else n.toString//if(n%1 ==0) return n.toInt.toString else return n.toString
+      case B(b) => if(b) return "true" else return ""
       case Undefined => "undefined"
       //case _ => throw new UnsupportedOperationException
     }
@@ -124,7 +124,12 @@ object Lab2 extends jsy.util.JsyApplication {
       {
 
         case Plus => eval(env, en) match{//plus works on number and string types. If either type is a string, it concatenates one expresiion with the other
-          case N(a) => eval(env, ed) match{
+        //if the first argument is boolean, cast it as an integer, and try again  
+        case B(a) => return eval(env, Binary(Plus, N(toNumber(en)), ed))
+        //if its a number, 
+        case N(a)=> eval(env, ed) match{
+        	  //if the second argument is a number, recurse as well
+        	case B(b) => return eval(env, Binary(Plus, en, N(toNumber(ed))))
             case N(b) => return N(a+b)
             case _=> return S(toStr(eval(env, en)).concat(toStr(eval(env, ed))))
           }
@@ -142,14 +147,33 @@ object Lab2 extends jsy.util.JsyApplication {
         		else return N(Double.NegativeInfinity) //otherwise return neg infinity
         	} else return N(toNumber(eval(env, en)) / toNumber(eval(env, ed))) //otherwise return the actual division
         }
-        case Eq => return B((toNumber(eval(env, en)) == toNumber(eval(env, ed)))) //fix
-        case Ne => return B((toNumber(eval(env, en)) != toNumber(eval(env, ed)))) //fix
-        case Lt => return B((toNumber(eval(env, en)) < toNumber(eval(env, ed))))
-        case Le => return B((toNumber(eval(env, en)) <= toNumber(eval(env, ed))))
-        case Gt => return B((toNumber(eval(env, en)) > toNumber(eval(env, ed))))
-        case Ge => return B((toNumber(eval(env, en)) >= toNumber(eval(env, ed))))
-        case And => return B((toBoolean(eval(env, en)) && toBoolean(eval(env, ed))))
-        case Or => return B((toBoolean(eval(env, en)) || toBoolean(eval(env, ed))))
+        case Eq => return B(toNumber(eval(env, en)) == toNumber(eval(env, ed))) //fix
+        case Ne => return B(toNumber(eval(env, en)) != toNumber(eval(env, ed))) //fix
+        case Lt => return B(toNumber(eval(env, en)) < toNumber(eval(env, ed)))
+        case Le => return B(toNumber(eval(env, en)) <= toNumber(eval(env, ed)))
+        case Gt => return B(toNumber(eval(env, en)) > toNumber(eval(env, ed)))
+        case Ge => return B(toNumber(eval(env, en)) >= toNumber(eval(env, ed)))
+        //case And => return B(toBoolean(eval(env, en)) && toBoolean(eval(env, ed)))
+//        case And => eval(env, en) match{
+//          case B(a) => eval(env, ed) match{
+//            case B(b) => return B(a && b)
+//            case _=> return eval(env, ed)
+//          }
+//          case _=> return eval(env, ed)
+//        }
+        case And =>{
+          val a = eval(env, en)
+          val b = eval(env, ed)
+          if(toBoolean(a)) return b
+          else return a
+        }
+        
+        case Or =>{
+          val b = eval(env, ed)
+          val a = eval(env, en)
+          if(toBoolean(a)) return a;
+          else return b
+        }
 
         case Seq =>{ eval(env, en) //sequential operator evaluates both statements and returns the last
           return eval(env, ed)
