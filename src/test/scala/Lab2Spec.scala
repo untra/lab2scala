@@ -205,8 +205,8 @@ class ConstSpec extends FlatSpec {
     val e1 = N(3)
     val e2 = Binary(Plus, Var("x"), N(1))
     val e3 = ConstDecl("x", e1, e2)
-    val e4 = Binary(Plus, e3, N(5))
-    assert(eval(e4) === N(9))
+    //eval(Print(e3))
+    assert( e3 === N(4))
   } 
   
 }

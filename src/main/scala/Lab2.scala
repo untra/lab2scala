@@ -7,8 +7,8 @@ object Lab2 extends jsy.util.JsyApplication {
    * CSCI 3155: Lab 2
    * <Samuel Volin>
    * 
-   * Partner: <Roberto Kingsly>
-   * Collaborators: <Sam Volin, Alex Tsankov>
+   * Partner: <Cris Salazar>
+   * Collaborators: <Alex Tsankov, Roger Klotz>
    */
 
   /*
@@ -96,7 +96,7 @@ object Lab2 extends jsy.util.JsyApplication {
   def eval(env: Env, e: Expr): Expr = {
     /* Some helper functions for convenience. */
     def eToVal(e: Expr): Expr = eval(env, e)
-
+    		//println(env)
     e match {
       /* Base Cases */
       case N(n) => return e; //eval should return the expression if it is a terminal
@@ -106,64 +106,69 @@ object Lab2 extends jsy.util.JsyApplication {
       /* Inductive Cases */
       case Print(e1) => println(pretty(eToVal(e1))); Undefined
       case Var(x) =>{ 
-        //println(x); 
-        return Undefined
-        //return env(x)
+        get(env, x)
       }
-      case ConstDecl(x, en, ed) =>
-        {val term = eval(en)
-          return eval(env + (x -> term), ed)
+      case ConstDecl(x, en, ed) =>{
+         val envp = extend(env, x, eval(en))   
+         //println("set" + envp.toString)
+         return eval(envp, ed) 
         }
-      case If(cond, t, f) => if(toBoolean(cond)) return eval(t) else return eval(f)
+      case If(cond, t, f) => if(toBoolean(cond)) return eval(env, t) else return eval(env, f)
       case Unary(op, en) => op match
       {
-        case Neg => return N(-1 * toNumber(eval(en))) //unary make negative
-        case Not => return B(!toBoolean(eval(en)))
+        case Neg => return N(-1 * toNumber(eval(env, en))) //unary make negative
+        case Not => return B(!toBoolean(eval(env, en)))
         case _ => throw new UnsupportedOperationException
       }
       case Binary(op, en, ed) => op match
       {
 
-        case Plus => en match{//plus works on number and string types. If either type is a string, it concatenates one expresiion with the other
-          case N(a) => ed match{
+        case Plus => eval(env, en) match{//plus works on number and string types. If either type is a string, it concatenates one expresiion with the other
+          case N(a) => eval(env, ed) match{
             case N(b) => return N(a+b)
-            case _=> return S(toStr(eval(en)).concat(toStr(eval(ed))))
+            case _=> return S(toStr(eval(env, en)).concat(toStr(eval(env, ed))))
           }
-          case _=> return S(toStr(eval(en)).concat(toStr(eval(ed))))
+          case _=> return S(toStr(eval(env, en)).concat(toStr(eval(env, ed))))
           
         }
 
         //case Plus => return N(toNumber(eval(en)) + toNumber(eval(ed)))
-        case Minus => return N(toNumber(eval(en)) - toNumber(eval(ed)))
-        case Times => return N(toNumber(eval(en)) * toNumber(eval(ed)))
+        case Minus => return N(toNumber(eval(env, en)) - toNumber(eval(env, ed)))
+        case Times => return N(toNumber(eval(env, en)) * toNumber(eval(env, ed)))
         case Div => { //binary divide
-        	if (toNumber(eval(ed)) == 0) { //checks if we are dealing with a zero
-        		if (toNumber(eval(en)) > 0) //if the numerator is greater than zero, return positive
+        	if (toNumber(eval(env, ed)) == 0) { //checks if we are dealing with a zero
+        		if (toNumber(eval(env, en)) > 0) //if the numerator is greater than zero, return positive
         			return N(Double.PositiveInfinity)
         		else return N(Double.NegativeInfinity) //otherwise return neg infinity
-        	} else return N(toNumber(eval(en)) / toNumber(eval(ed))) //otherwise return the actual division
+        	} else return N(toNumber(eval(env, en)) / toNumber(eval(env, ed))) //otherwise return the actual division
         }
-        case Eq => return B((toNumber(eval(en)) == toNumber(eval(ed)))) //fix
-        case Ne => return B((toNumber(eval(en)) != toNumber(eval(ed)))) //fix
-        case Lt => return B((toNumber(eval(en)) < toNumber(eval(ed))))
-        case Le => return B((toNumber(eval(en)) <= toNumber(eval(ed))))
-        case Gt => return B((toNumber(eval(en)) > toNumber(eval(ed))))
-        case Ge => return B((toNumber(eval(en)) >= toNumber(eval(ed))))
-        case And => return B((toBoolean(eval(en)) && toBoolean(eval(ed))))
-        case Or => return B((toBoolean(eval(en)) || toBoolean(eval(ed))))
-        case Seq =>{ eval(en) //sequential operator evaluates both statements and returns the last
-          return eval(ed)
+        case Eq => return B((toNumber(eval(env, en)) == toNumber(eval(env, ed)))) //fix
+        case Ne => return B((toNumber(eval(env, en)) != toNumber(eval(env, ed)))) //fix
+        case Lt => return B((toNumber(eval(env, en)) < toNumber(eval(env, ed))))
+        case Le => return B((toNumber(eval(env, en)) <= toNumber(eval(env, ed))))
+        case Gt => return B((toNumber(eval(env, en)) > toNumber(eval(env, ed))))
+        case Ge => return B((toNumber(eval(env, en)) >= toNumber(eval(env, ed))))
+        case And => return B((toBoolean(eval(env, en)) && toBoolean(eval(env, ed))))
+        case Or => return B((toBoolean(eval(env, en)) || toBoolean(eval(env, ed))))
+
+        case Seq =>{ eval(env, en) //sequential operator evaluates both statements and returns the last
+          return eval(env, ed)
           }
         }
         case _ => throw new UnsupportedOperationException
       }
   }
-  println("fuck")
-    val e1 = N(3)
-    val e2 = Binary(Plus, Var("x"), N(1))
-    val e3 = ConstDecl("x", e1, e2)
-    val e4 = Binary(Plus, e3, N(5))
-    eval(e4)
+//  println("fuck")
+//    val e1 = N(3)
+//    val e2 = Binary(Plus, Var("x"), N(1))
+//    val e3 = ConstDecl("x", e1, e2)
+//    val e4 = Binary(Plus, e3, N(5))
+//    eval(e4)
+//    val xxx = 10 - 3 << 1 //if << has precedence, evaluates 10 - (3 << 1) = 4
+//    						//if - has precence, evaluates (10 - 3) << 1 = 14
+//    val yyy = 2 << 2 - 1 //if << has precedence, evaluates to 8 - 1 = 7
+//    						// if - has precedence, evaluates to (2 << 1) = 4
+    
     
   
   // Interface to run your interpreter starting from an empty environment.
